@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>看看你的任性奖品是什么？</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<meta name="format-detection" content="telephone=no">
+	<link rel='stylesheet' href='<%= static_url %>/css/style.css?299' />
+	<script src="<%= static_url %>/js/jquery.js"></script>
+   <script type="text/javascript">
+      if(location.hash == '#1'){
+         location.href = '/';
+      }else{
+         location.hash = '1';
+      }
+   </script>
+</head>
+<body>
+	<input type='hidden' id='static_url' value='<%= static_url %>'/>
+	<input type='hidden' id='openid' value='<%= openid %>' />
+   <input type='hidden' id='name' value='<%= name %>' />
+   <input type='hidden' id='first' value='<%= first %>' />
+   <div class='cover'>
+      <img src="<%= static_url %>/img/cover.png">  
+   </div>
+   <% if (first) {%>
+   <div class='pan'>
+   	<div class='a'>
+   		<div class='mask' id='prize_mask' ></div>
+   		<img src="" class='prize' style='display: none'>
+   	    <div class="section" >
+   	    	<h1>点击指针，开始抽奖！</h1>
+   			<div id="outercont">
+   				<div id="outer-cont">
+   					<div id="outer"><img src="<%= static_url %>/img/activity-lottery-1.png" width="310px"></div>
+   				</div>
+   				<div id="inner-cont">
+   					<div id="inner"><img src="<%= static_url %>/img/activity-lottery-2.png"></div>
+   				</div>
+   			</div>
+   	    </div>
+   		<div class='time'>
+   	    	<p><span>活动时间：</span>5月25日 12:00－5月28日 18:00</p>
+   	    	<p><span>兑奖时间：</span>5月29日 － 5月31日</p>
+   		</div>
+   	</div>
+   	<div class='b'>
+   		<img src="<%= static_url %>/img/p15/people1.png" class='qrcode q1'>
+   		<img src="<%= static_url %>/img/p15/people2.png" class='qrcode q2'>
+   	</div>
+	 </div>
+    <% } %>
+</body>
+<script type="text/javascript">
+function settitle(a){
+   var $body = $('body');
+   document.title = a;
+   // hack在微信等webview中无法修改document.title的情况
+   var $iframe = $('<iframe src="/favicon.ico"></iframe>').on('load', function() {
+   setTimeout(function() {
+   $iframe.off('load').remove()
+   }, 0)
+   }).appendTo($body);
+}
+
+settitle('3333');
+
+$('.cover img').css('height',$(window).height() - 50);
+    $('.cover').click(function(){
+         if(!$('first')){
+            alert('您已经抽过奖了，让您的朋友来帮您抽吧');
+            return;
+         }
+         $.ajax({
+            url:'/app/submit',
+            type:'get',
+            data:{
+               act:'check',
+               openid : $('#openid').val()
+            },
+            success:function(ret){
+              if(ret == 2){
+                alert('您已经抽过奖了，让您的朋友来帮您抽吧');
+              }else{
+                $('.cover').slideUp();
+                $('.pan').show();
+              }
+            },
+            error:function(){
+            }
+         });
+   });
+
+	window.requestAnimFrame=(function(){
+			return window.requestAnimationFrame||
+			 	   window.webkitRequestAnimationFrame||
+			 	   window.mozRequestAnimationFrame||
+			 	   window.oRequestAnimationFrame||
+			 	   window.msRequestAnimationFrame||
+			 	   function(callback){
+			 	   		window.setTimeout(callback,1000/60)
+			 	   	}
+		})();
+
+   		var totalDeg=360*3+0;
+   		var steps=[];
+   		var lostDeg=[22,67,112,157,202,247,292,337];
+         //2 元话费 60
+         //防晒露 8
+         //铁盒面膜 3
+         //你任性，我买单 1
+         //2000元 0 
+         //换个微信 100
+         //10元 2000
+         //2元微信红包 50
+        var prize_text = ['2元话费','防晒露','铁盒面膜','你任性，我买单大奖','2000元大礼包','','10元优惠劵','2元微信红包']; 
+   		var prize,sncode;
+   		var count=0;var now=0;
+   		var a=0.01;
+   		var outter,inner,timer,running=false;
+
+
+   		function countSteps(){
+   			var t=Math.sqrt(2*totalDeg/a);
+   			var v=a*t;
+   			for(var i=0;i<t;i++){
+   				steps.push((2*v*i-a*i*i)/2);
+   			}
+   			steps.push(totalDeg);
+   		}
+
+   		function step(){
+   			outter.style.webkitTransform='rotate('+steps[now++]+'deg)';
+   			outter.style.MozTransform='rotate('+steps[now++]+'deg)';
+
+   			if(now<steps.length){
+   				requestAnimFrame(step);
+   			}else{
+   				running=false;
+   				if(prize!=null){
+   					if(prize != 5){
+                     settitle();
+   						document.title = '恭喜你获得任性奖品：'+prize_text[prize]+'一份';	
+   					}
+   					$.ajax({
+   						url:'/app/submit',
+   						data:{
+                        openid:$('#openid').val(),
+                        prize:prize_text[prize],
+                        name:$('#name').val()
+                     },
+   						type:'get',
+   						success:function(){
+   							 var url = $('#static_url').val()+'/img/p14/'+ prize + '.png';
+		                    $('.prize').attr('src',url);
+		                    setTimeout(function(){
+		                     $('.mask').show();
+		                     $('.prize').show();
+		   					},200);
+   						}
+   					});
+   				}
+   			}
+   		}
+
+         function getprize(){
+            var d = new Date().getDay();
+            var total = 0;
+			if(d == 1 || d == 0){
+				prize_config = [100,15,5,1,1,50,2000,100];
+			}else if(d ==2){
+				prize_config = [50,7,2,1,1,100,2000,50];
+			}else if(d == 3){
+				prize_config = [50,7,2,1,1,100,2000,50];
+			}
+			for(var i =0;i<8;i++){
+				total+=prize_config[i];
+			}
+            var r = parseInt(total * Math.random());  
+            var s = 0;
+            for(var i = 0;i<8;i++){
+               s+=prize_config[i];
+               if(r<=s){
+                  return i;
+               }
+            }
+         }
+
+   		function start(deg){
+            prize = getprize();
+            $.ajax({
+            	url:'/app/get?index='+prize,
+            	success:function(res){
+            		if(res != 1){
+	            		prize = 5;
+   					}
+   					deg = lostDeg[prize];
+	            	clearInterval(timer);
+	   				totalDeg=360*3+deg;
+	   				steps=[];
+	   				now=0;
+	   				countSteps();
+	   				requestAnimFrame(step);
+            	}
+            });
+   		}
+
+   		window.start=start;
+   		outter=document.getElementById('outer');
+   		inner=document.getElementById('inner');
+   		i=10;
+
+   		$('.prize').click(function(){
+   			$('.a').hide();
+   			$('.b').show();
+   			if(prize == 5){	
+   				$('.q2').show();
+   			}else{
+   				$('.q1').show();
+   			}
+   		});
+
+   		$("#inner").click(function(){
+   			if(running)return;
+   			running = true;
+   			timer=setInterval(function(){
+   					i+=5;
+   					outter.style.webkitTransform='rotate('+i+'deg)';
+   					outter.style.MozTransform='rotate('+i+'deg)';
+   			},1);
+
+   			setTimeout(function(){
+   				start();
+   			},0);
+   		});
+</script>
+</html>
